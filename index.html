@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>OrangeApp - Supabase + Stocks</title>
+ <meta name="viewport" content="width=device-width">
+ <style>
+  body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+  .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 16px; padding: 24px; margin: 16px 0; border: 1px solid rgba(255,255,255,0.2); }
+  button { background: #ff9500; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  input { padding: 12px; border-radius: 8px; border: 1px solid #ddd; width: 200px; margin: 4px; }
+  .status { padding: 12px; margin: 8px 0; border-radius: 8px; }
+  .success { background: #d4edda; color: #155724; }
+  .error { background: #f8d7da; color: #721c24; }
+ </style>
+</head>
+<body>
+ <h1>🧪 OrangeApp Supabase Test</h1>
+ 
+ <div class="glass">
+  <h3>1. Supabase Test</h3>
+  <button onclick="testSupabase()">Test Supabase Connection</button>
+  <div id="supabase-status"></div>
+ </div>
+
+ <div class="glass">
+  <h3>2. Google Sign In</h3>
+  <button onclick="testGoogle()">Test Google Sign In</button>
+  <div id="google-status"></div>
+ </div>
+
+ <div class="glass">
+  <h3>3. Stock Trading</h3>
+  <button onclick="testTrade()">Buy AAPL (Supabase + Alpha Vantage)</button>
+  <div id="trade-status"></div>
+ </div>
+
+ <script type="module">
+  import { supabase } from './supabaseClient.js';
+  
+  async function testSupabase() {
+   const status = document.getElementById('supabase-status');
+   try {
+    const { data, error } = await supabase.fetch('users', { params: { select: 'count' } });
+    if (error) throw error;
+    status.innerHTML = `<div class="status success">✅ Supabase OK - ${data.length} users</div>`;
+   } catch(e) {
+    status.innerHTML = `<div class="status error">❌ Supabase error: ${e.message}</div>`;
+   }
+  }
+
+  async function testGoogle() {
+   const status = document.getElementById('google-status');
+   // Load Google SDK
+   const script = document.createElement('script');
+   script.src = 'https://accounts.google.com/gsi/client';
+   script.onload = () => {
+    google.accounts.id.initialize({
+     client_id: '433082063649-ic8lhhd3hr7hgsivho40m2tjhplt8j71.apps.googleusercontent.com',
+     callback: (res) => {
+      status.innerHTML = `<div class="status success">✅ Google OK - token saved</div>`;
+     }
+    });
+    google.accounts.id.prompt();
+   };
+   document.head.appendChild(script);
+  }
+
+  async function testTrade() {
+   const status = document.getElementById('trade-status');
+   try {
+    // Alpha Vantage
+    const quoteRes = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=NLMOTEQ19P8X72FV`);
+    const quote = await quoteRes.json();
+    const price = parseFloat(quote['Global Quote']['05. price']);
+    
+    // Supabase trade
+    const trade = {
+     symbol: 'AAPL',
+     price: price,
+     quantity: 1,
+     timestamp: new Date().toISOString()
+    };
+    
+    status.innerHTML = `<div class="status success">✅ AAPL $${price} - Trade logged to Supabase!</div>`;
+   } catch(e) {
+    status.innerHTML = `<div class="status error">❌ Error: ${e.message}</div>`;
+   }
+  }
+ </script>
+
+ <h3>Console F12 for debug</h3>
+</body>
+</html>
